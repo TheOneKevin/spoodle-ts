@@ -12,8 +12,7 @@ let d = `
         if($n == 2) return $b;
         return $fib($n-1, $b, $a+$b);
     };
-    $fib(76, 0, 1);
-    $emit($fib(76, 0, 1));`;
+    return $fib(76, 0, 1);`;
 
 let inputStream = new ANTLRInputStream(d.toString());
 let lexer = new SpoodleLexer(inputStream);

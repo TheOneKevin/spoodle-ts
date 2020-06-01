@@ -2,8 +2,7 @@ import * as Spoodle from "../antlr/SpoodleParser";
 
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { SpoodleVisitor } from "../antlr/SpoodleVisitor";
-import { Value, Type, Identifier } from "../common/Type";
-import { IdentifierVisitor } from "./sIdentifierVisitor";
+import { Value, Type } from "../common/Type";
 import { LiteralVisitor } from "./sLiteralVisitor";
 import { BytecodeChunk } from "./Bytecode";
 import { Op } from "../common/Opcode";
@@ -36,7 +35,7 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
     }
 
     public visitIdentifier(ctx: Spoodle.IdentifierContext): number {
-        let id = new IdentifierVisitor().visit(ctx);
+        let id = ctx.text;
         let slot = this.bc.getLocalSlot(id);
         return slot >= 0
             ? this.bc.emitBytes(Op.GETLOCAL, slot)
@@ -49,14 +48,9 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
 
         // Stack layout:
         // Bottom [ func, arg1, arg2, arg3, ... ] Top
+        
+        written += this.visit(ctx.rvalue());
 
-        if (ctx.identifier()) {
-            written += this.visit(ctx.identifier());
-        } else if (ctx.reservedKeyword()) {
-            written += this.bc.emitBytes(Op.GETGLOBAL, this.bc.getGlobalSlot({
-                prefix: '$', name: ctx.reservedKeyword().text
-            }));
-        }
         if (ctx.functionparams()) {
             written += this.visit(ctx.functionparams());
             nparams = ctx.functionparams().rvalue().length;
@@ -95,7 +89,7 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
 
     public visitAssignment(ctx: Spoodle.AssignmentContext): number {
         let written: number = 0;
-        let id = new IdentifierVisitor().visit(ctx.identifier());
+        let id = ctx.identifier().text;
         let slot = this.bc.getLocalSlot(id);
 
         if (ctx.assign().binary()) {
@@ -123,22 +117,22 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
         let body = this.bc.createChild();
         let arity = 0;
 
-        body.enterScope(); // Enter scope so it's not global
+        // Enter scope so it's not global
+        body.enterScope();
         if (ctx.functiontempl()) {
             // Stack layout:
             // (a, b, c, d) => bottom [ a, b, c, d ] top
             arity = ctx.functiontempl().identifier().length;
-            ctx.functiontempl().identifier().map(x =>
-                body.createLocal(new IdentifierVisitor().visit(x))
-            );
+            ctx.functiontempl().identifier().map(x => body.createLocal(x.text));
         }
-        body.locals.forEach(x => console.log(x));
         new StatementVisitor(body).visit(ctx.blockstatement());
-        body.emitBytes(Op.PUSH, Type.NULL, Op.RETURN);
-        let fid = this.bc.addFunction(arity, body);
-        
-        written += this.bc.emitBytes(Op.PUSH, Type.FUNCTION, fid);
 
+        // No return? Add one!
+        if(body.code.readUInt8(body.ip - 1) != Op.RETURN)
+            body.emitBytes(Op.PUSH, Type.NULL, Op.RETURN);
+
+        let fid = this.bc.addFunction(arity, body);
+        written += this.bc.emitBytes(Op.PUSH, Type.FUNCTION, fid);
         return written;
     }
 }

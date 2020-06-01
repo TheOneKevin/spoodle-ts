@@ -15,11 +15,6 @@ export namespace Type {
     export const isLong = (res: bigint | number) => LONG_MIN <= res && res <= LONG_MAX;
 }
 
-export interface Identifier {
-    prefix: string;
-    name: string;
-}
-
 export class Value {
     public v: any;
     public type: Type;

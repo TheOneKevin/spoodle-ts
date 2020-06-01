@@ -7,6 +7,7 @@ program: statement *;
 statement
     : blockstatement
     | ifstatement
+    | forstatement
     | whilestatement
     | dostatement
     | returnstatement
@@ -20,6 +21,8 @@ blockstatement  : '{' statement* '}' ;
 
 ifstatement     : 'if' '(' rvalue ')' s1=statement ('else' s2=statement)? ;
 
+forstatement    : 'for' '(' (init1=declarevar | init2=exprstatement) cond=exprstatement fini=rvalue? ')' statement ;
+
 whilestatement  : 'while' '(' rvalue ')' statement ;
 
 returnstatement : 'return' rvalue? ';' ;
@@ -31,7 +34,7 @@ declarevar      : 'let' Whitespace* identifier ('=' rvalue)? ';' ;
 rvalue
     : ('(' rvalue ')')                                  # r_rvalue
     | identifier                                        # r_identifier
-    | (identifier | reservedKeyword) '(' functionparams? ')' # r_functioncall
+    | rvalue '(' functionparams? ')'                    # r_functioncall
     | literal                                           # r_literal
     | a=rvalue '?' b=rvalue ':' c=rvalue                # ternery
     | unary rvalue                                      # unaryoperation
@@ -53,8 +56,8 @@ binary: CMP | '||' | '&&' | '-' | '+' | '%' | '*' | '/' ;
 
 // Statements
 
-reservedKeyword : RESERVED ;
-RESERVED        : '$emit' | '$typeof' ;
+/*reservedKeyword : RESERVED ;
+RESERVED        : '$emit' | '$typeof' ;*/
 
 functiontempl   : identifier (',' identifier)* ;
 functionparams  : rvalue (',' rvalue)* ;

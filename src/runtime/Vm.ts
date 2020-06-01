@@ -3,7 +3,6 @@ import { Op } from "../common/Opcode";
 import { Context } from "./Context";
 import { FunctionRuntime } from "./FunctionRuntime";
 import { decodeBinaryOperator } from "./Operator";
-import { inspect } from "util";
 
 function parseType(ctx: Context, vtabf: Array<Function>): Value {
     let tp = ctx.readByte();
@@ -49,7 +48,7 @@ export function execute(main: Buffer, ftab: Array<Function>) {
     //let vftab = new Array<Value>();
     //ftab.map((f, i) => vftab[i] = new Value(f, Type.FUNCTION));
 
-    while (ctx.ip < ctx.buf.length - 1) {
+    while (ctx.ip < ctx.buf.length) {
         let op = ctx.readByte();
         switch (op) {
             case Op.PUSH: {

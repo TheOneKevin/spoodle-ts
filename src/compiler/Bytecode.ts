@@ -1,6 +1,6 @@
 import assert = require("assert");
 import SortedSet = require("collections/sorted-set");
-import { Identifier, Function } from "../common/Type";
+import { Function } from "../common/Type";
 import { Op } from "../common/Opcode";
 
 const BUF_SIZE = 128;
@@ -23,11 +23,11 @@ export class BytecodeChunk {
     private constructor() {
         this.code = Buffer.alloc(BUF_SIZE, 0, "ascii");
         this.locals = new SortedSet([],
-            (l: Local, r: Local): boolean => l.id.name == r.id.name && l.scope == r.scope,
+            (l: Local, r: Local): boolean => l.name == r.name && l.scope == r.scope,
             (l: Local, r: Local): number => {
                 // Order as such: {a, 0} {b, 0} {c, 0} {a, 1} etc...
-                if (l.id.name < r.id.name) return -1;
-                else if (l.id.name == r.id.name) {
+                if (l.name < r.name) return -1;
+                else if (l.name == r.name) {
                     if (l.scope < r.scope) return -1;
                     else if (l.scope > r.scope) return 1;
                     return 0;
@@ -47,8 +47,8 @@ export class BytecodeChunk {
         res.funtab = new Array<Function>();
         res.strtab = new Array<string>();
         // Reserved keywords
-        res.createGlobal({ prefix: '$', name: '$emit' });
-        res.createGlobal({ prefix: '$', name: '$typeof' });
+        res.createGlobal('$emit');
+        res.createGlobal('$typeof');
         return res;
     }
 
@@ -85,41 +85,41 @@ export class BytecodeChunk {
         return res;
     }
 
-    public createLocal(id: Identifier) {
+    public createLocal(id: string) {
         this.locals.push({
-            id: id, scope: this.currentScope, slot: this.sp++
+            name: id, scope: this.currentScope, slot: this.sp++
         });
     }
 
-    public getLocalSlot(id: Identifier): number {
+    public getLocalSlot(id: string): number {
         let node = this.locals.findGreatestLessThanOrEqual({
-            id: id, scope: this.currentScope, slot: 0
+            name: id, scope: this.currentScope, slot: 0
         });
-        if (!node || node.value.id.name != id.name)
+        if (!node || node.value.name != id)
             return -1;
         return node.value.slot;
     }
 
-    public createGlobal(id: Identifier): number {
+    public createGlobal(id: string): number {
         if (this.parent)
             return this.parent.createGlobal(id);
 
-        if (this.globals.has(id.name))
-            return this.globals.get(id.name).slot;
+        if (this.globals.has(id))
+            return this.globals.get(id).slot;
         let slot = this.globals.size + 1;
-        this.globals.set(id.name, {
+        this.globals.set(id, {
             slot: slot,
             isPaired: true
         });
         return slot;
     }
 
-    public getGlobalSlot(id: Identifier): number {
+    public getGlobalSlot(id: string): number {
         if (this.parent)
             return this.parent.getGlobalSlot(id);
 
-        if (this.globals.has(id.name))
-            return this.globals.get(id.name).slot;
+        if (this.globals.has(id))
+            return this.globals.get(id).slot;
         else
             return this.createGlobal(id);
     }
@@ -153,7 +153,7 @@ export class BytecodeChunk {
 }
 
 interface Local {
-    id: Identifier;
+    name: string;
     scope: number;
     slot: number;
 }

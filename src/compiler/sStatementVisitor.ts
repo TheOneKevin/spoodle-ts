@@ -1,10 +1,10 @@
+import * as Spoodle from "../antlr/SpoodleParser";
+
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { SpoodleVisitor } from "../antlr/SpoodleVisitor";
-import { BlockstatementContext, StatementContext, IfstatementContext, DeclarevarContext, ExprstatementContext, RvalueContext, ReturnstatementContext } from "../antlr/SpoodleParser";
 import { BytecodeChunk } from "./Bytecode";
 import { RvalueVisitor } from "./sRvalueVisitor";
-import { Identifier, Type } from "../common/Type";
-import { IdentifierVisitor } from "./sIdentifierVisitor";
+import { Type } from "../common/Type";
 import { Op } from "../common/Opcode";
 
 export class StatementVisitor extends AbstractParseTreeVisitor<number>
@@ -25,7 +25,7 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
         return result + child;
     }
 
-    public visitBlockstatement(ctx: BlockstatementContext): number {
+    public visitBlockstatement(ctx: Spoodle.BlockstatementContext): number {
         let written: number = 0;
         this.bc.enterScope();
         for (let s of ctx.statement()) {
@@ -37,7 +37,7 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
         return written;
     }
 
-    public visitIfstatement(ctx: IfstatementContext): number {
+    public visitIfstatement(ctx: Spoodle.IfstatementContext): number {
         let written: number = 0;
         written += this.visitRvalue(ctx.rvalue());
         written += this.bc.emitBytes(Op.JF);
@@ -69,16 +69,19 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
         return written;
     }
 
-    public visitReturnstatement(ctx: ReturnstatementContext): number {
+    public visitReturnstatement(ctx: Spoodle.ReturnstatementContext): number {
         let written: number = 0;
-        written += this.visitRvalue(ctx.rvalue());
+        if(ctx.rvalue())
+            written += this.visitRvalue(ctx.rvalue());
+        else // Return void is same as null for us
+            written += this.bc.emitBytes(Op.PUSH, Type.NULL);
         written += this.bc.emitBytes(Op.RETURN);
         return written;
     }
 
-    public visitDeclarevar(ctx: DeclarevarContext): number {
+    public visitDeclarevar(ctx: Spoodle.DeclarevarContext): number {
         let written: number = 0;
-        let id: Identifier = new IdentifierVisitor().visit(ctx.identifier());
+        let id: string = ctx.identifier().text;
         // It is very important that this executes before createLocal()
         // take this example: { let x = 1; { let x = x; } }
         // Should translate to: PUSH 0 1; GETLOCAL 0;
@@ -99,14 +102,14 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
         return written;
     }
 
-    public visitExprstatement(ctx: ExprstatementContext): number {
+    public visitExprstatement(ctx: Spoodle.ExprstatementContext): number {
         let written: number = 0;
         written += this.visitRvalue(ctx.rvalue());
         written += this.bc.emitBytes(Op.POP); // Conserve stack size
         return written;
     }
 
-    public visitRvalue(ctx: RvalueContext): number {
+    public visitRvalue(ctx: Spoodle.RvalueContext): number {
         return new RvalueVisitor(this.bc).visit(ctx);
     }
 }
