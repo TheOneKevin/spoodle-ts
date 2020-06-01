@@ -4,7 +4,8 @@
       "module": "CommonJS",
       "lib": [ "ES6", "DOM" ],
       "sourceMap": true,
-      "outDir": "js",
+      "outDir": "dist",
+      "declaration": true
     },
     "exclude": [ "src/vm_deprecated" ]
 }

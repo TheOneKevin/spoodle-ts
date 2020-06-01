@@ -1,19 +1,20 @@
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { SpoodleVisitor } from "../antlr/SpoodleVisitor";
-import { BlockstatementContext, StatementContext, IfstatementContext, DeclarevarContext, ExprstatementContext, RvalueContext } from "../antlr/SpoodleParser";
-import { Op, BytecodeChunk } from "./Bytecode";
+import { BlockstatementContext, StatementContext, IfstatementContext, DeclarevarContext, ExprstatementContext, RvalueContext, ReturnstatementContext } from "../antlr/SpoodleParser";
+import { BytecodeChunk } from "./Bytecode";
 import { RvalueVisitor } from "./sRvalueVisitor";
-import { Identifier, Type } from "./Type";
+import { Identifier, Type } from "../common/Type";
 import { IdentifierVisitor } from "./sIdentifierVisitor";
+import { Op } from "../common/Opcode";
 
 export class StatementVisitor extends AbstractParseTreeVisitor<number>
     implements SpoodleVisitor<number> {
 
     public bc: BytecodeChunk;
 
-    public constructor() {
+    public constructor(bc: BytecodeChunk) {
         super();
-        this.bc = new BytecodeChunk();
+        this.bc = bc;
     }
 
     protected defaultResult(): number {
@@ -27,7 +28,11 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
     public visitBlockstatement(ctx: BlockstatementContext): number {
         let written: number = 0;
         this.bc.enterScope();
-        written += this.visitChildren(ctx);
+        for (let s of ctx.statement()) {
+            written += this.visit(s);
+            if (s.returnstatement()) // Ignore everything after return.
+                break;
+        }
         written += this.bc.leaveScope();
         return written;
     }
@@ -36,17 +41,38 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
         let written: number = 0;
         written += this.visitRvalue(ctx.rvalue());
         written += this.bc.emitBytes(Op.JF);
-        let jmpBack = this.bc.ip; // Backpatching
-        written += this.bc.emitInt16(69);
-        // Note that jump offsets are measured from AFTER the jump instruction
+        let jmpBack1 = this.bc.ip; // Backpatching
+        written += this.bc.emitUInt16(69);
+
         // Emit the true block
-        let off = this.visit(ctx._s1);
-        written += off;
-        // Backpatch
-        this.bc.code.writeInt16LE(off, jmpBack);
+        let off1 = this.visit(ctx._s1);
+
         // Emit the false block if it exists
-        if (ctx._s2)
-            written += this.visit(ctx._s2);
+        if (ctx._s2) {
+            // Short circuit when return
+            if (this.bc.code.readUInt8(this.bc.ip - 1) == Op.RETURN) {
+                this.visit(ctx._s2);
+            } else {
+                // Jump past false after true
+                off1 += this.bc.emitBytes(Op.JMP);
+                let jmpBack2 = this.bc.ip;
+                off1 += this.bc.emitUInt16(420);
+
+                let off2 = this.visit(ctx._s2);
+                this.bc.code.writeUInt16LE(off2, jmpBack2);
+                written += off2;
+            }
+        }
+
+        this.bc.code.writeUInt16LE(off1, jmpBack1);
+        written += off1;
+        return written;
+    }
+
+    public visitReturnstatement(ctx: ReturnstatementContext): number {
+        let written: number = 0;
+        written += this.visitRvalue(ctx.rvalue());
+        written += this.bc.emitBytes(Op.RETURN);
         return written;
     }
 

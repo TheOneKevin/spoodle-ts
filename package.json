@@ -2,11 +2,12 @@
   "name": "spoodle-ts",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "antlr": "rimraf src/antlr && antlr4ts -o src/antlr -no-listener -visitor src/Spoodle.g4",
-    "start": "node js/index.js",
-    "build": "rimraf js && tsc"
+    "start": "node dist/debugrepl.js",
+    "build": "rimraf dist && tsc"
   },
   "author": "",
   "license": "MIT",

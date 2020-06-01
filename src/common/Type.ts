@@ -6,9 +6,7 @@ export enum Type {
     STRING,
     BOOLEAN,
     NULL,
-    IDENTIFIER,
-    FUNCTION,
-    BLOCK
+    FUNCTION, NATIVE_FUNCTION // Shhh... It's a secret!
 }
 
 export namespace Type {
@@ -34,4 +32,9 @@ export class Value {
     isNumerical(): boolean {
         return this.type == Type.LONG || this.type == Type.NUMBER;
     }
+}
+
+export interface Function {
+    arity: number;
+    code: Buffer;
 }

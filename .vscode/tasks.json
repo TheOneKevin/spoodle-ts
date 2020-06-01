@@ -9,8 +9,8 @@
 			"detail": "rimraf antlr && antlr4ts -o antlr -no-listener -visitor Spoodle.g4"
 		},
 		{
-			"type": "typescript",
-			"tsconfig": "tsconfig.json",
+			"type": "npm",
+			"script": "build",
 			"problemMatcher": [
 				"$tsc"
 			],
@@ -18,7 +18,7 @@
 				"kind": "build",
 				"isDefault": true
 			},
-			"label": "tsc: build - tsconfig.json"
+			"label": "npm: build - tsconfig.json"
 		}
 	]
 }

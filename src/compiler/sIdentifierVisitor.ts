@@ -1,5 +1,5 @@
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
-import { Identifier } from "./Type";
+import { Identifier } from "../common/Type";
 import { SpoodleVisitor } from "../antlr/SpoodleVisitor";
 import { IdentifierContext } from "../antlr/SpoodleParser";
 

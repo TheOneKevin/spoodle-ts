@@ -1,5 +1,5 @@
 node_modules/
 **/.antlr/
-js/
+dist/
 **/antlr/
 package-lock.json

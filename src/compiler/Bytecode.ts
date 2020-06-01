@@ -1,53 +1,32 @@
 import assert = require("assert");
 import SortedSet = require("collections/sorted-set");
-import { Identifier } from "./Type";
+import { Identifier, Function } from "../common/Type";
+import { Op } from "../common/Opcode";
 
-export enum Op {
-    PUSH,
-    POP,
-    JMP,
-    JT,     // Jump true
-    JF,     // Jump false
-    GETLOCAL,
-    SETLOCAL,
-    GETGLOBAL,
-    SETGLOBAL,
-    CALL,
-
-    ADD, SUB, MUL, DIV, MOD
-}
-
-export namespace Op {
-    export function getOpFromString(o: string): Op {
-        switch (o) {
-            case '+': return Op.ADD;
-            case '-': return Op.SUB;
-            case '*': return Op.MUL;
-            case '/': return Op.DIV;
-            case '%': return Op.MOD;
-            default:
-                throw new Error("Unknown operator: " + o);
-        }
-    }
-}
+const BUF_SIZE = 128;
 
 export class BytecodeChunk {
 
     public code: Buffer;
-    public locals: SortedSet;
-    public globals: Map<string, Global>;
-
     public ip: number; // Instruction pointer
-    public sp: number; // Stack pointer
     public currentScope: number;
 
-    public constructor() {
-        this.code = Buffer.alloc(100, 0, "ascii");
+    private sp: number; // Stack pointer
+    public locals: SortedSet;
+
+    private globals: Map<string, Global>;
+    public funtab: Array<Function>;
+    public strtab: Array<string>;
+
+    private parent: BytecodeChunk = null;
+
+    private constructor() {
+        this.code = Buffer.alloc(BUF_SIZE, 0, "ascii");
         this.locals = new SortedSet([],
             (l: Local, r: Local): boolean => l.id.name == r.id.name && l.scope == r.scope,
             (l: Local, r: Local): number => {
                 // Order as such: {a, 0} {b, 0} {c, 0} {a, 1} etc...
-                if (l.scope < r.scope) return -1;
+                if (l.id.name < r.id.name) return -1;
                 else if (l.id.name == r.id.name) {
                     if (l.scope < r.scope) return -1;
                     else if (l.scope > r.scope) return 1;
@@ -55,35 +34,55 @@ export class BytecodeChunk {
                 }
                 return 1;
             });
-        this.globals = new Map<string, Global>();
+
         this.ip = 0;
         this.sp = 0;
         this.currentScope = 0;
+    }
 
+    public static createParent(): BytecodeChunk {
+        let res = new BytecodeChunk();
+        res.parent = null;
+        res.globals = new Map<string, Global>();
+        res.funtab = new Array<Function>();
+        res.strtab = new Array<string>();
         // Reserved keywords
-        this.createGlobal({ prefix: '$', name: '$emit' });
-        this.createGlobal({ prefix: '$', name: '$typeof' });
+        res.createGlobal({ prefix: '$', name: '$emit' });
+        res.createGlobal({ prefix: '$', name: '$typeof' });
+        return res;
+    }
+
+    public createChild(): BytecodeChunk {
+        let res = new BytecodeChunk();
+        res.parent = this;
+        return res;
     }
 
     public emitBytes(...bytes: number[]): number {
         let written = 0;
         bytes.forEach(b => {
-            this.code.writeUInt8(b, this.ip++);
+            this.code.writeUInt8(b, this.inc());
             written++;
         });
         return written;
     }
 
     public emitDouble(val: number): number {
-        this.code.writeDoubleLE(val, this.ip);
-        this.ip += 8;
+        this.code.writeDoubleLE(val, this.inc(8));
         return 8;
     }
 
-    public emitInt16(val: number): number {
-        this.code.writeInt16LE(val, this.ip);
-        this.ip += 2;
+    public emitUInt16(val: number): number {
+        this.code.writeUInt16LE(val, this.inc(2));
         return 2;
+    }
+
+    private inc(v: number = 1): number {
+        let res = this.ip;
+        this.ip += v;
+        if (this.ip > this.code.length)
+            this.code = Buffer.alloc(BUF_SIZE * 2, this.code);
+        return res;
     }
 
     public createLocal(id: Identifier) {
@@ -102,6 +101,9 @@ export class BytecodeChunk {
     }
 
     public createGlobal(id: Identifier): number {
+        if (this.parent)
+            return this.parent.createGlobal(id);
+
         if (this.globals.has(id.name))
             return this.globals.get(id.name).slot;
         let slot = this.globals.size + 1;
@@ -113,6 +115,9 @@ export class BytecodeChunk {
     }
 
     public getGlobalSlot(id: Identifier): number {
+        if (this.parent)
+            return this.parent.getGlobalSlot(id);
+
         if (this.globals.has(id.name))
             return this.globals.get(id.name).slot;
         else
@@ -127,7 +132,6 @@ export class BytecodeChunk {
         let written = 0;
         this.currentScope--;
         assert(this.currentScope >= 0, `currentScope is below 0 (at ${this.currentScope})`);
-
         // Pop all locals that have left the scope
         while (this.locals.max() && this.locals.max().scope > this.currentScope) {
             this.locals.pop();
@@ -135,6 +139,16 @@ export class BytecodeChunk {
             written += this.emitBytes(Op.POP);
         }
         return written;
+    }
+
+    public addFunction(arity: number, bc: BytecodeChunk): number {
+        if (this.parent)
+            return this.parent.addFunction(arity, bc);
+        this.funtab.push({
+            arity: arity,
+            code: Buffer.alloc(bc.ip, bc.code)
+        });
+        return this.funtab.length-1;
     }
 }
 

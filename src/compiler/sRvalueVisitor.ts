@@ -2,10 +2,12 @@ import * as Spoodle from "../antlr/SpoodleParser";
 
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { SpoodleVisitor } from "../antlr/SpoodleVisitor";
-import { Value, Type, Identifier } from "./Type";
+import { Value, Type, Identifier } from "../common/Type";
 import { IdentifierVisitor } from "./sIdentifierVisitor";
 import { LiteralVisitor } from "./sLiteralVisitor";
-import { BytecodeChunk, Op } from "./Bytecode";
+import { BytecodeChunk } from "./Bytecode";
+import { Op } from "../common/Opcode";
+import { StatementVisitor } from "./sStatementVisitor";
 
 export class RvalueVisitor extends AbstractParseTreeVisitor<number>
     implements SpoodleVisitor<number> {
@@ -43,9 +45,10 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
 
     public visitR_functioncall(ctx: Spoodle.R_functioncallContext): number {
         let written = 0;
+        let nparams = 0;
 
-        if (ctx.functionparams())
-            written += this.visit(ctx.functionparams());
+        // Stack layout:
+        // Bottom [ func, arg1, arg2, arg3, ... ] Top
 
         if (ctx.identifier()) {
             written += this.visit(ctx.identifier());
@@ -54,9 +57,11 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
                 prefix: '$', name: ctx.reservedKeyword().text
             }));
         }
-
-        written += this.bc.emitBytes(Op.CALL);
-
+        if (ctx.functionparams()) {
+            written += this.visit(ctx.functionparams());
+            nparams = ctx.functionparams().rvalue().length;
+        }
+        written += this.bc.emitBytes(Op.CALL, nparams);
         return written;
     }
 
@@ -84,7 +89,7 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
         let written: number = 0;
         written += this.visit(ctx._left);
         written += this.visit(ctx._right);
-        written += this.bc.emitBytes(Op.getOpFromString(ctx._op.text), 2);
+        written += this.bc.emitBytes(Op.getOpFromString(ctx._op.text));
         return written;
     }
 
@@ -109,6 +114,30 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
         written += slot >= 0
             ? this.bc.emitBytes(Op.SETLOCAL, slot)
             : this.bc.emitBytes(Op.SETGLOBAL, this.bc.getGlobalSlot(id));
+
+        return written;
+    }
+
+    public visitInlinefuncdecl(ctx: Spoodle.InlinefuncdeclContext): number {
+        let written: number = 0;
+        let body = this.bc.createChild();
+        let arity = 0;
+
+        body.enterScope(); // Enter scope so it's not global
+        if (ctx.functiontempl()) {
+            // Stack layout:
+            // (a, b, c, d) => bottom [ a, b, c, d ] top
+            arity = ctx.functiontempl().identifier().length;
+            ctx.functiontempl().identifier().map(x =>
+                body.createLocal(new IdentifierVisitor().visit(x))
+            );
+        }
+        body.locals.forEach(x => console.log(x));
+        new StatementVisitor(body).visit(ctx.blockstatement());
+        body.emitBytes(Op.PUSH, Type.NULL, Op.RETURN);
+        let fid = this.bc.addFunction(arity, body);
+        
+        written += this.bc.emitBytes(Op.PUSH, Type.FUNCTION, fid);
 
         return written;
     }
