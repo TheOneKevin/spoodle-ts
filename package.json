@@ -7,7 +7,8 @@
   "scripts": {
     "antlr": "rimraf src/antlr && antlr4ts -o src/antlr -no-listener -visitor src/Spoodle.g4",
     "start": "node dist/debugrepl.js",
-    "build": "rimraf dist && tsc"
+    "build": "rimraf dist/*.d.ts dist/**/*.d.ts && tsc",
+    "build-editor": "cd editor && tsc && browserify dist/editor/webworker.js -o dist/webworker.bundle.js && browserify dist/editor/index.js -o dist/index.bundle.js"
   },
   "author": "",
   "license": "MIT",
@@ -19,6 +20,8 @@
   },
   "devDependencies": {
     "antlr4ts-cli": "^0.5.0-alpha.3",
+    "browserify": "^16.5.1",
+    "buffer": "^5.6.0",
     "monaco-editor": "^0.20.0",
     "rimraf": "^3.0.2"
   }

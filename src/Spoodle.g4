@@ -67,9 +67,10 @@ NAME            : [a-zA-Z_][a-zA-Z0-9_]* ;
 
 // String parsing
 
-literal                 : Floating_literal | Numeric_literal | String_literal ;
+literal                 : Floating_literal | Numeric_literal | String_literal | Boolean_literal ;
 Floating_literal        : DEC '.' DEC FL_SUFFIX ;
 Numeric_literal         : (HEX | DEC) NM_SUFFIX? ;
+Boolean_literal         : BOOLEAN;
 String_literal          : STRING ;
 
 fragment STRING         : '"' (EscapeChar | ~["\\])* '"' ;
@@ -77,6 +78,7 @@ fragment FL_SUFFIX      : [fFdD] ;
 fragment NM_SUFFIX      : [bBsSlL] ;
 fragment HEX            : '0' ('x'|'X') [0-9a-fA-F]+ ;
 fragment DEC            : [0-9]+;
+fragment BOOLEAN        : 'true' | 'false';
 
 fragment EscapeChar     : '\\' (["\\/bfnrt] | UnicodeEscape) ;
 fragment UnicodeEscape  : 'u' HexDigit HexDigit HexDigit HexDigit ;

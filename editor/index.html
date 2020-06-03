@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>spoodle demo</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+		integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.2/css/bulma.min.css"
+		integrity="sha256-qS+snwBgqr+iFVpBB58C9UCxKFhyL03YHpZfdNUhSEw=" crossorigin="anonymous" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css"
+		integrity="sha256-46r060N2LrChLLb5zowXQ72/iKKNiw/lAmygmHExk/o=" crossorigin="anonymous" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/goldenlayout.min.js"
+		integrity="sha256-NhJAZDfGgv4PiB+GVlSrPdh3uc75XXYSM4su8hgTchI=" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="./assets/gl-base.css" />
+	<link rel="stylesheet" href="./assets/gl-custom.css" />
+	<link rel="stylesheet" href="./assets/style.css" />
+</head>
+
+<template type="text/html" class="header-template">
+	<div class="header-toolbar">
+		<button class="compile button is-small is-link execdisable" onclick="compile()">
+			<span class="icon is-small">
+				<i class="fas fa-cubes"></i>
+			</span>
+			<span>
+				Compile to Bytecode
+			</span>
+		</button>
+
+		<div class="debugtools buttons has-addons" style="margin-bottom: 0px; margin-right: 10px;">
+			<button class="button is-small is-rounded" onclick="start()">
+				<span class="icon is-small">
+					<i class="fas fa-bug"></i>
+				</span>
+			</button>
+			<button class="button is-small is-rounded" onclick="step()">
+				<span class="icon is-small">
+					<i class="fas fa-step-forward"></i>
+				</span>
+			</button>
+			<button class="button is-small is-rounded" onclick="stop()">
+				<span class="icon is-small">
+					<i class="fas fa-stop"></i>
+				</span>
+			</button>
+		</div>
+
+		<div class="execute buttons field has-addons">
+			<button class="button is-small is-link" onclick="reset(); respawn();" title="Respawn worker">
+				<span class="icon is-small">
+					<i class="fas fa-power-off"></i>
+				</span>
+			</button>
+
+			<button class="button is-small is-success execdisable execute" onclick="execute()">
+				<span class="icon is-small">
+					<i class="fas fa-paper-plane"></i>
+				</span>
+				<span>
+					Execute Bytecode
+				</span>
+			</button>
+
+			<button class="button is-small is-danger" onclick="reset()" title="Erase compiled bytecode">
+				<span class="icon is-small">
+					<i class="fas fa-eraser"></i>
+				</span>
+			</button>
+		</div>
+
+		<button class="clearcons button is-small" onclick="$('#consoleview').html('');" onfocus="blur()"
+			title="Clear console">
+			<span class="icon is-small">
+				<i class="fas fa-trash-alt"></i>
+			</span>
+		</button>
+	</div>
+</template>
+
+<template type="text/html" class="debug-template">
+	<div style="padding: 10px; overflow-y: auto;">
+		<table class="table is-hoverable is-fullwidth debugtable">
+
+		</table>
+	</div>
+</template>
+
+<template type="text/html" class="debugview-template">
+</template>
+
+<body>
+	<!-- OR ANY OTHER AMD LOADER HERE INSTEAD OF loader.js -->
+	<script src="../node_modules/monaco-editor/min/vs/loader.js"></script>
+	<script src="./scripts/main.js"></script>
+
+	<script>
+		function reset() {
+			eDisasm.setValue("");
+			eDisasm.updateOptions({
+				lineNumbers: (n) => n
+			});
+			eCode.decorations = eCode.deltaDecorations(eCode.decorations, []);
+			eDisasm.decorations = eDisasm.deltaDecorations(eDisasm.decorations, []);
+			eCode.markers = [];
+			worker.postMessage([4]);
+		}
+
+		function compile() {
+			reset();
+			worker.postMessage([0, eCode.getValue()]);
+			worker.postMessage([1]);
+		}
+
+		function execute() {
+			worker.postMessage([2]);
+			primeButtons();
+		}
+
+		function start() {
+			worker.postMessage([5]);
+		}
+
+		function step() {
+			worker.postMessage([6]);
+		}
+
+		function stop() {
+			worker.postMessage([7]);
+			eDisasm.decorations = eDisasm.deltaDecorations(eDisasm.decorations, []);
+			$('#debugview .table').html('');
+			$('#stackview .table').html('');
+			$('#globalview .table').html('');
+			$('#callview .table').html('');
+		}
+	</script>
+
+	<script src="./scripts/layout.js"></script>
+	<script src="./scripts/monaco.js"></script>
+</body>
+
+</html>

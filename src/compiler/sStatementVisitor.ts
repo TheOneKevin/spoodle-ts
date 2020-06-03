@@ -25,6 +25,14 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
         return result + child;
     }
 
+    public visitProgram(ctx: Spoodle.ProgramContext): number {
+        let written: number = 0
+        written += this.visitChildren(ctx);
+        if(!(this.bc.ip >= 1 && this.bc.code.readUInt8(this.bc.ip - 1) == Op.RETURN))
+            written += this.bc.emitBytes(Op.PUSH, Type.NULL, Op.RETURN);
+        return written;
+    }
+
     public visitBlockstatement(ctx: Spoodle.BlockstatementContext): number {
         let written: number = 0;
         this.bc.enterScope();
@@ -40,7 +48,7 @@ export class StatementVisitor extends AbstractParseTreeVisitor<number>
     public visitIfstatement(ctx: Spoodle.IfstatementContext): number {
         let written: number = 0;
         written += this.visitRvalue(ctx.rvalue());
-        written += this.bc.emitBytes(Op.JF);
+        written += this.bc.emitBytes(Op.CJF);
         let jmpBack1 = this.bc.ip; // Backpatching
         written += this.bc.emitUInt16(69);
 

@@ -11,6 +11,7 @@ import { PerformanceObserver, performance } from 'perf_hooks';
 var stdin = process.openStdin();
 
 // let $fib = function($n, $a, $b) { if($n == 1) return $a; if($n == 2) return $b; return $fib($n-1, $b, $a+$b); }; $emit($fib(76, 0, 1)); return;
+// let $fib = function($n) { if($n == 1 || $n == 2) return 1; return $fib($n-1) + $fib($n-2); }; return $fib(10);
 
 const obs = new PerformanceObserver(x => {
     console.log(x.getEntries()[0].name + " " + x.getEntries()[0].duration + "ms");
@@ -33,8 +34,8 @@ stdin.addListener("data", function (d) {
     performance.mark('B');
 
     try {
-        console.log("Parse Tree:");
-        console.log(tree.toStringTree(parser));
+        //console.log("Parse Tree:");
+        //console.log(tree.toStringTree(parser));
 
         performance.mark('C');
         let bc = BytecodeChunk.createParent();

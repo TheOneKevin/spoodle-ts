@@ -1,4 +1,4 @@
-import { Value } from "../common/Type";
+import { Value, Function } from "../common/Type";
 import { Frame } from "./Frame";
 
 export class Context {
@@ -6,17 +6,29 @@ export class Context {
     public bp: number;
     public globals: Array<Value>;
 
+    public ftab: Function[];
+    public fptr: number = 0;
+
     public stack: Array<Value>;
     public callframe: Array<Frame>;
     public buf: Buffer;
 
-    public constructor(buf: Buffer) {
+    public constructor(buf: Buffer, ftab: Function[]) {
         this.ip = 0;
         this.bp = 0;
         this.globals = new Array<Value>();
         this.stack = new Array<Value>();
         this.callframe = new Array<Frame>();
-        this.buf = buf;
+
+        // Main code
+        this.ftab = ftab;
+        this.ftab[0] = {
+            code: buf,
+            arity: 0
+        };
+        this.fptr = 0;
+
+        this.buf = this.ftab[this.fptr].code;
     }
 
     public readByte(): number {
@@ -35,8 +47,9 @@ export class Context {
         return res;
     }
 
-    public switchCode(buf: Buffer) {
-        this.buf = buf;
+    public switchCode(id: number) {
+        this.fptr = id;
+        this.buf = this.ftab[this.fptr].code;
     }
 
     public pop(): Value {

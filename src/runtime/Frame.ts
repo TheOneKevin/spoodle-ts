@@ -1,7 +1,7 @@
 import { Value } from "../common/Type";
 
 export interface Frame {
-    func: Buffer;
+    func: number;
     ip: number;
     bp: number;
     return: Value;

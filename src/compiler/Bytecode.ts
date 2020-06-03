@@ -44,7 +44,10 @@ export class BytecodeChunk {
         let res = new BytecodeChunk();
         res.parent = null;
         res.globals = new Map<string, Global>();
+        
         res.funtab = new Array<Function>();
+        res.funtab.push(null); // Reserve 0th slot for main
+
         res.strtab = new Array<string>();
         // Reserved keywords
         res.createGlobal('$emit');
@@ -148,7 +151,7 @@ export class BytecodeChunk {
             arity: arity,
             code: Buffer.alloc(bc.ip, bc.code)
         });
-        return this.funtab.length-1;
+        return this.funtab.length - 1;
     }
 }
 

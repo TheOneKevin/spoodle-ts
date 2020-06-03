@@ -2,7 +2,10 @@ export enum Op {
     PUSH,
     POP,
     JMP,
-    JF,         // Jump false
+    CJF,        // Consume and jump if false
+    JT,         // Peek and jump if true
+    JF,         // Peek and jump if false
+
     GETLOCAL,
     SETLOCAL,
     GETGLOBAL,
@@ -17,7 +20,7 @@ export enum Op {
 }
 
 export namespace Op {
-    export function getOpFromString(o: string): Op {
+    export function getBinOpFromString(o: string): Op {
         switch (o) {
             case '+': return Op.ADD;
             case '-': return Op.SUB;
@@ -28,7 +31,7 @@ export namespace Op {
             case '==': return Op.CEQ;
             case '<=': return Op.CLE;
             default:
-                throw new Error("Unknown operator: " + o);
+                throw new Error("Unknown binary operator: " + o);
         }
     }
 }

@@ -23,6 +23,8 @@ export class LiteralVisitor extends AbstractParseTreeVisitor<Value>
     public visitLiteral(ctx: LiteralContext): Value {
         if (ctx.Numeric_literal())
             return parseInteger(ctx.Numeric_literal().toString());
+        if(ctx.Boolean_literal())
+            return parseBoolean(ctx.Boolean_literal().toString());
         else if (ctx.String_literal())
             return parseString(ctx.String_literal().toString());
         throw Error("Literal not implemented (this is really bad).");
@@ -31,6 +33,14 @@ export class LiteralVisitor extends AbstractParseTreeVisitor<Value>
 
 function parseString(input: string): Value {
     return new Value(input.substring(1, input.length - 1), Type.STRING);
+}
+
+function parseBoolean(input: string): Value {
+    switch(input) {
+        case 'true': return new Value(true, Type.BOOLEAN);
+        case 'false': return new Value(false, Type.BOOLEAN);
+        default: throw new Error("Cannot parse boolean value (this is really bad): " + input);
+    }
 }
 
 function parseInteger(input: string): Value {

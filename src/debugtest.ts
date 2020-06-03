@@ -6,13 +6,15 @@ import { disassemble } from './common/Debug';
 import { StatementVisitor } from './compiler/sStatementVisitor';
 import { execute } from './runtime/Vm';
 
-let d = `
+//let d = "return 1 || 2;"
+let d = `let $fib = function($n) { if($n == 1 || $n == 2) return 1; return $fib($n-1) + $fib($n-2); }; return $fib(10);`;
+/*let d = `
     let $fib = function($n, $a, $b) {
         if($n == 1) return $a;
         if($n == 2) return $b;
         return $fib($n-1, $b, $a+$b);
     };
-    return $fib(76, 0, 1);`;
+    return $fib(76, 0, 1);`;*/
 
 let inputStream = new ANTLRInputStream(d.toString());
 let lexer = new SpoodleLexer(inputStream);
@@ -33,7 +35,7 @@ try {
     console.log("Disassembly:");
     console.log("main:");
     console.log(disassemble(bc.code, len));
-    for (let i = 0; i < bc.funtab.length; i++) {
+    for (let i = 1; i < bc.funtab.length; i++) {
         console.log(`${i}:`);
         console.log(disassemble(bc.funtab[i].code, bc.funtab[i].code.length));
     }

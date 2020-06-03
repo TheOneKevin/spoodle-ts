@@ -48,7 +48,7 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
 
         // Stack layout:
         // Bottom [ func, arg1, arg2, arg3, ... ] Top
-        
+
         written += this.visit(ctx.rvalue());
 
         if (ctx.functionparams()) {
@@ -83,8 +83,28 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
         let written: number = 0;
         written += this.visit(ctx._left);
         written += this.visit(ctx._right);
-        written += this.bc.emitBytes(Op.getOpFromString(ctx._op.text));
+        written += this.bc.emitBytes(Op.getBinOpFromString(ctx._op.text));
         return written;
+    }
+
+    public visitLogicalexpr(ctx: Spoodle.LogicalexprContext): number {
+        let written: number = 0;
+        written += this.visit(ctx._left);
+        // Short circuit (yeet if definite false/true)
+        if (ctx._op.text == '&&')
+            written += this.bc.emitBytes(Op.JF);
+        else if (ctx._op.text == '||')
+            written += this.bc.emitBytes(Op.JT);
+        else
+            throw new Error("Unknown operator " + ctx._op.text);
+        // Simple backpatching for jumping over latter block
+        let pos = this.bc.ip;
+        written += this.bc.emitUInt16(123);
+        // We pop the first operand off and allow the second operand to come on the stack
+        // this way: 1 && 2 && 3 evaluates to 3
+        let off = this.bc.emitBytes(Op.POP) + this.visit(ctx._right);
+        this.bc.code.writeUInt16LE(off, pos);
+        return written + off;
     }
 
     public visitAssignment(ctx: Spoodle.AssignmentContext): number {
@@ -99,7 +119,7 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
                 ? this.bc.emitBytes(Op.GETLOCAL, slot)
                 : this.bc.emitBytes(Op.GETGLOBAL, this.bc.getGlobalSlot(id));
             written += this.visit(ctx.rvalue());
-            written += this.bc.emitBytes(Op.getOpFromString(ctx.assign().binary().text), 2);
+            written += this.bc.emitBytes(Op.getBinOpFromString(ctx.assign().binary().text), 2);
         }
         else {
             written += this.visit(ctx.rvalue());
@@ -128,7 +148,7 @@ export class RvalueVisitor extends AbstractParseTreeVisitor<number>
         new StatementVisitor(body).visit(ctx.blockstatement());
 
         // No return? Add one!
-        if(body.code.readUInt8(body.ip - 1) != Op.RETURN)
+        if (body.code.readUInt8(body.ip - 1) != Op.RETURN)
             body.emitBytes(Op.PUSH, Type.NULL, Op.RETURN);
 
         let fid = this.bc.addFunction(arity, body);

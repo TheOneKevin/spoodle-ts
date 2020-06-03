@@ -1,0 +1,101 @@
+.console {
+    font-family: Consolas, 'Courier New', Courier, monospace;
+    font-size: 14px;
+    padding: 10px;
+    overflow: auto;
+}
+
+.header-toolbar .button:not(.is-rounded) {
+    border-radius: 0px;
+}
+
+.button.clearcons {
+    background-color: transparent;
+    border: none;
+    color: #ee5253;
+}
+
+.header-toolbar .button {
+    height: 18px;
+}
+
+.header-toolbar .buttons {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+/*.header-toolbar {
+    display: inline-flex;
+}*/
+
+/* Palette is from https://flatuicolors.com/palette/ca */
+
+.console .info {
+    color: #10ac84;
+}
+
+.console .error {
+    color: #ee5253;
+}
+
+.console .log {
+    color: #576574;
+}
+
+/* Hacky way to modify Bulma because I don't know how to use scss */
+
+.is-success {
+    background-color: #1dd1a1 !important;
+}
+
+.is-danger {
+    background-color: #ee5253 !important;
+}
+
+.is-link {
+    background-color: #2e86de !important;
+}
+
+.is-jigglypuff {
+    background-color: #ff9f43 !important;
+    color: white;
+}
+
+/* Editor Decorations */
+.debugtable {
+    font-family: Consolas, 'Courier New', Courier, monospace;
+    font-size: 14px;
+}
+
+.debugtable td:first-child {
+    width: 30px;
+}
+
+.debugtable td {
+    -webkit-user-select: none;    
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    line-height: 20px;
+}
+
+#debugview .debugtable td:first-child {
+    width: 45% !important;
+    text-align: center;
+}
+
+.debugtable .input {
+    height: 20px;
+}
+
+.highlighted {
+    background-color: #fec9573b;
+}
+
+.highlighted:hover {
+    background-color: #fec9574b !important;
+}
+
+.debugContent {
+    background-color: #fec9573b;
+}
