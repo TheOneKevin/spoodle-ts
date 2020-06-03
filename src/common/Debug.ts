@@ -9,7 +9,7 @@ export function disassemble(buf: Buffer, len: number, line: boolean = true, mapp
             returnString += ip.toString().padStart(4, '0') + ': ';
         if (mapping)
             mapping.push(ip);
-        
+
         let op = buf.readUInt8(ip++);
         returnString += Op[op.toString()] + ' ';
         switch (op) {
@@ -49,14 +49,6 @@ export function disassemble(buf: Buffer, len: number, line: boolean = true, mapp
             case Op.CALL:
                 returnString += buf.readUInt8(ip++);
                 break;
-
-            // Do operations
-            /*case Op.ADD: case Op.SUB: case Op.MUL: case Op.DIV: case Op.MOD:
-            case Op.CEQ: case Op.CNE: case Op.CLT: case Op.CLE: case Op.CGT: case Op.CGE: {
-                let num = buf.readUInt8(ip++);
-                returnString += num;
-                break;
-            }*/
         }
 
         returnString += '\n';

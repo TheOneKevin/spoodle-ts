@@ -6,11 +6,10 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "antlr": "rimraf src/antlr && antlr4ts -o src/antlr -no-listener -visitor src/Spoodle.g4",
-    "start": "node dist/debugrepl.js",
     "build": "rimraf dist/*.d.ts dist/**/*.d.ts && tsc",
     "build-editor": "cd editor && tsc && browserify dist/editor/webworker.js -o dist/webworker.bundle.js && browserify dist/editor/index.js -o dist/index.bundle.js"
   },
-  "author": "",
+  "author": "Kevin Dai",
   "license": "MIT",
   "dependencies": {
     "@types/node": "^14.0.1",

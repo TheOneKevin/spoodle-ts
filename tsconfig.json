@@ -7,14 +7,7 @@
       "sourceMap": true,
       "outDir": "dist",
       "incremental": true,
-      "declaration": true,
-      /*"paths": {
-        "@spoodle/*": [ "./*" ],
-        "@antlr/*": [ "./antlr/*" ],
-        "@common/*": [ "./common/*" ],
-        "@compiler/*": [ "./compiler/*" ],
-        "@runtime/*": [ "./runtime" ]
-      }*/
+      "declaration": true
     },
-    "exclude": [ "editor/" ]
+    "exclude": [ "editor/", "dist/", "node_modles/" ]
 }

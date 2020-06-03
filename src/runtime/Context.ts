@@ -1,5 +1,5 @@
 import { Value, Function } from "../common/Type";
-import { Frame } from "./Frame";
+import { Frame } from "./FunctionRuntime";
 
 export class Context {
     public ip: number;

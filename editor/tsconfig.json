@@ -6,11 +6,9 @@
       "lib": [ "ES6", "DOM" ],
       "sourceMap": true,
       "outDir": "./dist/",
-      "incremental": true,
-      //"declaration": true,
-      /*"paths": {
-        "@spoodle/*": [ "../src/*" ]
-      }*/
+      "incremental": true
     },
-    "exclude": [ "dist/" ]
+    "files": [
+      "./webworker.ts"
+    ]
 }

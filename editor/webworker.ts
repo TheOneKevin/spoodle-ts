@@ -44,16 +44,19 @@ class ErrorListener implements ANTLRErrorListener<Token> {
 window.ParseCode = function (d: string, f: ErrorHandler) {
     let inputStream = new ANTLRInputStream(d);
     let lexer = new SpoodleLexer(inputStream);
+    lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
+    if(f) lexer.addErrorListener(new ErrorListener(f));
     let tokenStream = new CommonTokenStream(lexer);
     let parser = new SpoodleParser(tokenStream);
-    parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
     if (f) parser.addErrorListener(new ErrorListener(f));
+    parser.removeErrorListener(ConsoleErrorListener.INSTANCE);
     parser.program();
 }
 
 window.CompileCode = function (d: string, f: ErrorHandler): Compiled {
     let inputStream = new ANTLRInputStream(d);
     let lexer = new SpoodleLexer(inputStream);
+    if(f) lexer.addErrorListener(new ErrorListener(f));
     let tokenStream = new CommonTokenStream(lexer);
     let parser = new SpoodleParser(tokenStream);
     // Generate AST
