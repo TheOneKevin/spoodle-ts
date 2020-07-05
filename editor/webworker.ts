@@ -119,14 +119,14 @@ window.ExecuteCode = function (c: Compiled) {
     }
 }
 
-window.PrepareExecutionEnvironment = function(c: Compiled): Context {
-    let ctx = new Context(c.code, c.funtab);
-    prepareExecution(ctx);
+window.PrepareExecutionEnvironment = function(c: Compiled): Vm {
+    let ctx = new Vm(c.code, c.funtab);
+    ctx.prepareExecution();
     return ctx;
 }
 
-window.StepOne = function(ctx: Context) {
-    stepOne(ctx)
+window.StepOne = function(ctx: Vm) {
+    ctx.stepOne()
 }
 
 window.TypeEnum = function(s: string) {
