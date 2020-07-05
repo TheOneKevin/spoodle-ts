@@ -7,6 +7,7 @@ console.error = (t) => postMessage([0, 'error', t]);
 importScripts('../dist/webworker.bundle.js');
 
 let bytecode = null;
+let vm = null;
 let ctx = null;
 let errorFunc = (a, b, c) => postMessage([2, a, b, c]);
 let update = () => {
@@ -61,24 +62,27 @@ onmessage = e => {
             bytecode = null;
             break;
         case 5:
+            vm = null;
             ctx = null;
             console.info("Debugger attached.");
             if (bytecode) {
-                ctx = window.PrepareExecutionEnvironment(bytecode);
+                vm = window.PrepareExecutionEnvironment(bytecode);
+                ctx = vm.ctx;
                 update();
             }
             else
                 console.error("No bytecode supplied.");
             break;
         case 6:
-            if (ctx) {
-                window.StepOne(ctx);
+            if (vm) {
+                window.StepOne(vm);
                 update();
             }
             else
                 console.error("No debug session started.");
             break;
         case 7:
+            vm = null;
             ctx = null;
             console.info("Debugger detached.");
             break;
