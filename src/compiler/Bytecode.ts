@@ -44,7 +44,7 @@ export class BytecodeChunk {
         let res = new BytecodeChunk();
         res.parent = null;
         res.globals = new Map<string, Global>();
-        
+
         res.funtab = new Array<Function>();
         res.funtab.push(null); // Reserve 0th slot for main
 

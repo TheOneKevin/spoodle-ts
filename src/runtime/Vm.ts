@@ -1,7 +1,6 @@
 import { Value, Type, Function } from "../common/Type";
 import { Op } from "../common/Opcode";
-import { Context } from "./Context";
-import { NativeFunction } from "./FunctionRuntime";
+import { Frame, NativeFunction } from "./FunctionRuntime";
 import { decodeBinaryOperator, parseTruthy } from "./Operator";
 
 function parseType(ctx: Context): Value {
@@ -23,29 +22,11 @@ function parseType(ctx: Context): Value {
 
 const MAX_GLOBALS_RESERVED = 1;
 
-export class Vm {
+export class VmBase {
     public ctx: Context;
 
-    public constructor(main: Buffer, ftab: Function[]) {
-        this.ctx = new Context(main, ftab);
-        this.prepareExecution();
-    }
-
-    public prepareExecution() {
-        this.ctx.globals[0] = null;
-        this.ctx.globals[1] = new Value(
-            new NativeFunction((args: Value[]) => {
-                args.map(x => console.log(x.v));
-                return new Value(null, Type.NULL);
-            }), Type.NATIVE_FUNCTION);
-        this.ctx.callframe.push({
-            bp: 123, ip: 456, func: null, return: null
-        });
-    }
-
-    public execute() {
-        while (this.ctx.ip < this.ctx.buf.length)
-            this.stepOne();
+    public constructor(ctx: Context) {
+        this.ctx = ctx;
     }
 
     public stepOne() {
@@ -120,7 +101,7 @@ export class Vm {
                     for (let i = 0; i < arity; i++)
                         args.push(this.ctx.pop());
                     args = args.reverse();
-                    this.ctx.push((func.v as FunctionRuntime).f(args));
+                    this.ctx.push((func.v as NativeFunction).f(args));
                 }
                 break;
             }
@@ -150,4 +131,101 @@ export class Vm {
             }
         } // End switch
     } // End stepOne()
+}
+
+export class Vm extends VmBase {
+
+    public constructor(main: Buffer, ftab: Function[]) {
+        super(new Context(main, ftab));
+        this.prepareExecution();
+    }
+
+    public prepareExecution() {
+        this.ctx.globals[0] = null;
+        this.ctx.globals[1] = new Value(
+            new NativeFunction((args: Value[]) => {
+                args.map(x => console.log(x.v));
+                return new Value(null, Type.NULL);
+            }), Type.NATIVE_FUNCTION);
+        this.ctx.callframe.push({
+            bp: 123, ip: 456, func: null, return: null
+        });
+    }
+
+    public execute() {
+        while (this.ctx.ip < this.ctx.buf.length)
+            this.stepOne();
+    }
+}
+
+export class Context {
+    public ip: number;
+    public bp: number;
+    public globals: Array<Value>;
+
+    public ftab: Function[];
+    public fptr: number = 0;
+
+    public stack: Array<Value>;
+    public callframe: Array<Frame>;
+    public buf: Buffer;
+
+    public constructor(buf: Buffer, ftab: Function[]) {
+        this.ip = 0;
+        this.bp = 0;
+        this.globals = new Array<Value>();
+        this.stack = new Array<Value>();
+        this.callframe = new Array<Frame>();
+
+        // Main code
+        this.ftab = ftab;
+        this.ftab[0] = {
+            code: buf,
+            arity: 0
+        };
+        this.fptr = 0;
+
+        this.buf = this.ftab[this.fptr].code;
+    }
+
+    public readByte(): number {
+        return this.buf.readUInt8(this.ip++);
+    }
+
+    public readUInt16(): number {
+        let res = this.buf.readUInt16LE(this.ip);
+        this.ip += 2;
+        return res;
+    }
+
+    public readDouble(): number {
+        let res = this.buf.readDoubleLE(this.ip);
+        this.ip += 8;
+        return res;
+    }
+
+    public switchCode(id: number) {
+        this.fptr = id;
+        this.buf = this.ftab[this.fptr].code;
+    }
+
+    public pop(): Value {
+        return this.stack.pop();
+    }
+
+    public push(v: Value) {
+        this.stack.push(v);
+    }
+
+    public top(): Value {
+        return this.stack[this.sp()];
+    }
+
+    public sp(): number {
+        return this.stack.length - 1;
+    }
+
+    public currentframe(): Frame {
+        return this.callframe[this.callframe.length - 1];
+    }
 }

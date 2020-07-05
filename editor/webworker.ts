@@ -4,9 +4,8 @@ import { SpoodleParser } from '../src/antlr/SpoodleParser';
 import { BytecodeChunk } from '../src/compiler/Bytecode';
 import { disassemble } from '../src/common/Debug';
 import { StatementVisitor } from '../src/compiler/sStatementVisitor';
-import { execute, prepareExecution, stepOne } from '../src/runtime/Vm';
+import { Vm } from '../src/runtime/Vm';
 import { Function, Type } from '../src/common/Type';
-import { Context } from '../src/runtime/Context';
 
 interface Compiled {
     code: Buffer;
@@ -114,7 +113,7 @@ window.DisassembleCode = function (c: Compiled): Disassembly {
 
 window.ExecuteCode = function (c: Compiled) {
     try {
-        execute(c.code, c.funtab);
+        new Vm(c.code, c.funtab).execute();
     } catch (err) {
         console.error(err);
     }

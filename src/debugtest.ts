@@ -4,7 +4,7 @@ import { SpoodleParser } from './antlr/SpoodleParser';
 import { BytecodeChunk } from './compiler/Bytecode';
 import { disassemble } from './common/Debug';
 import { StatementVisitor } from './compiler/sStatementVisitor';
-import { execute } from './runtime/Vm';
+import { Vm } from './runtime/Vm';
 
 //let d = "return 1 || 2;"
 let d = `let $fib = function($n) { if($n == 1 || $n == 2) return 1; return $fib($n-1) + $fib($n-2); }; return $fib(10);`;
@@ -40,10 +40,8 @@ try {
         console.log(disassemble(bc.funtab[i].code, bc.funtab[i].code.length));
     }
     console.log("Executing...");
-
     let buf = Buffer.alloc(len, bc.code);
-
-    execute(buf, bc.funtab);
+    new Vm(buf, bc.funtab).execute();
 }
 catch (err) {
     console.error(err);

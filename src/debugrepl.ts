@@ -4,7 +4,7 @@ import { SpoodleParser } from './antlr/SpoodleParser';
 import { BytecodeChunk } from './compiler/Bytecode';
 import { disassemble } from './common/Debug';
 import { StatementVisitor } from './compiler/sStatementVisitor';
-import { execute } from './runtime/Vm';
+import { Vm } from './runtime/Vm';
 
 import { PerformanceObserver, performance } from 'perf_hooks';
 
@@ -47,16 +47,16 @@ stdin.addListener("data", function (d) {
         console.log("Disassembly:");
         console.log("main:");
         console.log(disassemble(bc.code, len));
-        for(let i = 0; i < bc.funtab.length; i++) {
+        for (let i = 1; i < bc.funtab.length; i++) {
             console.log(`${i}:`);
             console.log(disassemble(bc.funtab[i].code, bc.funtab[i].code.length));
         }
         console.log("Executing...");
 
         let buf = Buffer.alloc(len, bc.code);
-        
+
         performance.mark('E');
-        execute(buf, bc.funtab);
+        new Vm(buf, bc.funtab).execute();
         performance.mark('F');
 
         performance.measure('Lexing and AST', 'A', 'B');
